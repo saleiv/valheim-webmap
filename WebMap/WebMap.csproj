@@ -3,7 +3,12 @@
   <PropertyGroup>
     <Version>2.7.1</Version>
     <OutputType>Library</OutputType>
-    <TargetFramework>net48</TargetFramework>
+    <!-- Unity 6000 ships netstandard 2.1 assemblies. Targeting net48 cannot work:
+         the SDK's netstandard 2.0 facade trips CS1705 on
+         UnityEngine.ImageConversionModule, and substituting the game's
+         netstandard 2.1 facade forwards ReadOnlySpan to an assembly net48 lacks.
+         netstandard2.1 resolves both natively. -->
+    <TargetFramework>netstandard2.1</TargetFramework>
     <LangVersion>9.0</LangVersion>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <Copyright>(c) 2025 Various Authors</Copyright>
@@ -85,6 +90,5 @@
     <Reference Include="WebsocketSharp">
       <HintPath>..\libs\websocket-sharp.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 </Project>
