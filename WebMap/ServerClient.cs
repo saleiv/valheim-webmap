@@ -104,14 +104,14 @@ namespace WebMap
 
         public static void Write(ZPackage pkg)
         {
-            pkg.Write(Client.m_name);
-            pkg.Write(Client.m_characterID);
-            pkg.Write(Client.m_userInfo.m_id.ToString());
-            pkg.Write(Client.m_userInfo.m_displayName);
-            pkg.Write(Client.m_userInfo.m_serverAssignedDisplayName);
-            pkg.Write(Client.m_userInfo.m_playfabId);
-            // Server position is never public.
-            pkg.Write(false);
+            // Delegate to the game's own PlayerInfo serializer rather than
+            // hand-writing the field order. The hand-rolled version is what
+            // silently encoded the pre-l-1.0.7 layout when
+            // m_serverAssignedDisplayName moved into CrossNetworkUserInfo and
+            // m_playfabId appeared beside it. Using the game's own writer keeps
+            // this correct across future layout changes by construction.
+            // m_publicPosition is false on Client, so no position is emitted.
+            Client.Write(pkg.m_writer);
         }
     }
 }
