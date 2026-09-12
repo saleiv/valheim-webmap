@@ -89,7 +89,33 @@ namespace WebMap
 
         public void NotifyOnline()
         {
-            discordWebHook.SendMessage($"🎮 **{serverInfo["serverName"]}** is *online* 🟢\n💻 {AccessTools.Method(typeof(ZNet), "GetServerIP").Invoke(ZNet.instance, new object[] { })}:{ZNet.m_serverHostPort}\n🔑 {serverInfo["password"]}\n🗺 {WebMapConfig.URL}");
+            // ZNet.m_hostPort and ZNet.GetServerIP() are not stable across Valheim
+            // releases; m_hostPort is absent in l-1.0.7. Referencing either directly
+            // throws MissingFieldException from this method, which propagates out of
+            // the ZoneSystem.Load postfix and aborts world load with
+            // "World load failed mid-file". Resolve both reflectively and swallow
+            // failures: a Discord notification must never take the server down.
+            string address = "";
+            try
+            {
+                var ipMethod = AccessTools.Method(typeof(ZNet), "GetServerIP");
+                if (ipMethod != null && ZNet.instance != null)
+                {
+                    address = Convert.ToString(ipMethod.Invoke(ZNet.instance, new object[] { }));
+                }
+                // Renamed m_hostPort -> m_serverHostPort in l-1.0.7.
+                var portField = AccessTools.Field(typeof(ZNet), "m_serverHostPort")
+                             ?? AccessTools.Field(typeof(ZNet), "m_hostPort");
+                if (portField != null && ZNet.instance != null)
+                {
+                    address += ":" + Convert.ToString(portField.GetValue(ZNet.instance));
+                }
+            }
+            catch (Exception e)
+            {
+                ZLog.LogWarning($"WebMap: could not resolve server address: {e.Message}");
+            }
+            discordWebHook.SendMessage($"🎮 **{serverInfo["serverName"]}** is *online* 🟢\n💻 {address}\n🔑 {serverInfo["password"]}\n🗺 {WebMapConfig.URL}");
         }
 
         public void NotifyOffline()
